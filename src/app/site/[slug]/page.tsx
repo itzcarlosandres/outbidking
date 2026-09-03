@@ -1,11 +1,67 @@
 import React from "react"
 import { notFound } from "next/navigation"
-import { Navbar } from "@/components/layout/Navbar"
-import { Footer } from "@/components/layout/Footer"
+import type { Metadata } from "next"
 import { prisma } from "@/lib/db"
 import { SiteDetailClient } from "./SiteDetailClient"
+import { ProductJsonLd } from "@/components/seo/JsonLd"
 
 export const dynamic = "force-dynamic"
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const site = await prisma.site.findUnique({
+    where: { slug },
+    select: {
+      name: true,
+      description: true,
+      category: true,
+      url: true,
+    },
+  })
+
+  if (!site) {
+    return {
+      title: "Project Not Found",
+      description: "The requested project could not be found on puja.lol.",
+    }
+  }
+
+  const cleanDescription =
+    site.description.length > 160
+      ? `${site.description.slice(0, 157)}...`
+      : site.description
+
+  return {
+    title: `${site.name} — Live Rankings & Traffic on puja.lol`,
+    description: cleanDescription,
+    keywords: [
+      site.name,
+      site.category,
+      "saas leaderboard",
+      "project directory",
+      "startup rankings",
+      "puja.lol",
+    ],
+    openGraph: {
+      title: `${site.name} — Live Rankings on puja.lol`,
+      description: cleanDescription,
+      url: `/site/${slug}`,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${site.name} — Live Rankings on puja.lol`,
+      description: cleanDescription,
+    },
+    alternates: {
+      canonical: `/site/${slug}`,
+    },
+  }
+}
 
 export default async function SiteDetailPage({
   params,
@@ -100,5 +156,18 @@ export default async function SiteDetailPage({
     })),
   }
 
-  return <SiteDetailClient site={serializedSite} />
+  return (
+    <>
+      <ProductJsonLd
+        name={site.name}
+        description={site.description}
+        url={site.url}
+        slug={site.slug}
+        category={site.category}
+        winningBid={winningBidAmount}
+        rank={currentRank || 1}
+      />
+      <SiteDetailClient site={serializedSite} />
+    </>
+  )
 }
