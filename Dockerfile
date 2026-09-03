@@ -1,4 +1,4 @@
-# Base Node.js image with Node 22 (required for modern pnpm and Next.js 16/15)
+# Base Node.js image with Node 22
 FROM node:22-alpine AS base
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
@@ -7,7 +7,7 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml* ./
+COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
 COPY prisma ./prisma/
 
 RUN pnpm install --no-frozen-lockfile
@@ -21,7 +21,8 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-RUN pnpm build
+RUN npx prisma generate
+RUN npx next build
 
 # Production Runner Stage
 FROM node:22-alpine AS runner
