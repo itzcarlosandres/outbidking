@@ -21,7 +21,6 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-RUN pnpm prisma generate
 RUN pnpm build
 
 # Production Runner Stage
