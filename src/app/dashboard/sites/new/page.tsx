@@ -1,17 +1,18 @@
 "use client"
 
-import React, { useState, useEffect, Suspense, useMemo } from "react"
+import React, { useState, useEffect, Suspense, useMemo, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Navbar } from "@/components/layout/Navbar"
 import { Footer } from "@/components/layout/Footer"
-import { CategoryData, INITIAL_CATEGORIES } from "@/lib/categories"
+import { CategoryData, INITIAL_CATEGORIES, getCategoryIcon } from "@/lib/categories"
 import { formatCurrency, getFaviconUrl } from "@/lib/utils"
 import {
   ArrowLeft,
   ArrowRight,
   Check,
   CheckCircle2,
+  ChevronDown,
   Crown,
   Flame,
   Globe,
@@ -45,6 +46,27 @@ function PublishWizardContent() {
   const [category, setCategory] = useState<string>(
     searchParams.get("category") || "AI Agents & Infrastructure"
   )
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
+  const categoryDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Cerrar dropdown al hacer clic afuera
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        categoryDropdownRef.current &&
+        !categoryDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsCategoryDropdownOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  const selectedCategoryObj = categories.find((c) => c.name === category)
+  const SelectedWizardCategoryIcon = selectedCategoryObj
+    ? getCategoryIcon(selectedCategoryObj.icon)
+    : Sparkles
   
   // Bidding state
   const [initialBid, setInitialBid] = useState<number>(() => {
@@ -288,21 +310,69 @@ function PublishWizardContent() {
                 </p>
               </div>
 
-              <div>
+              {/* Selector personalizado de categorías con iconos oficiales */}
+              <div ref={categoryDropdownRef} className="relative">
                 <label className="block text-xs font-bold text-[var(--foreground)] mb-1.5">
                   Primary Category *
                 </label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full h-12 rounded-xl border border-[var(--input-border)] bg-[var(--input-bg)] px-4 text-sm text-[var(--foreground)] focus:border-[#FF4A1C] focus:outline-hidden cursor-pointer"
+                <button
+                  type="button"
+                  onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                  className="w-full h-12 rounded-xl border border-[var(--input-border)] bg-[var(--input-bg)] px-3 text-sm font-semibold text-[var(--foreground)] focus:border-[#FF4A1C] focus:ring-2 focus:ring-[#FF4A1C]/20 transition-all flex items-center justify-between gap-2 cursor-pointer hover:border-[#FF4A1C]/50"
+                  aria-expanded={isCategoryDropdownOpen}
                 >
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.name}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#FF4A1C]/10 text-[#FF4A1C] shrink-0">
+                      <SelectedWizardCategoryIcon className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="truncate">{category}</span>
+                  </div>
+                  <ChevronDown
+                    className={`h-4 w-4 text-[var(--muted)] shrink-0 transition-transform duration-200 ${
+                      isCategoryDropdownOpen ? "rotate-180 text-[#FF4A1C]" : ""
+                    }`}
+                  />
+                </button>
+
+                {isCategoryDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-2 z-50 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-1.5 shadow-xl max-h-72 overflow-y-auto backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
+                    <div className="space-y-0.5">
+                      {categories.map((c) => {
+                        const IconComp = getCategoryIcon(c.icon)
+                        const isSelected = c.name === category
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => {
+                              setCategory(c.name)
+                              setIsCategoryDropdownOpen(false)
+                            }}
+                            className={`w-full flex items-center justify-between gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer text-left ${
+                              isSelected
+                                ? "bg-[#FF4A1C] text-white shadow-xs"
+                                : "text-[var(--foreground)] hover:bg-[var(--muted-bg)]"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div
+                                className={`flex h-6 w-6 items-center justify-center rounded-lg shrink-0 ${
+                                  isSelected
+                                    ? "bg-white/20 text-white"
+                                    : "bg-[#FF4A1C]/10 text-[#FF4A1C]"
+                                }`}
+                              >
+                                <IconComp className="h-3.5 w-3.5" />
+                              </div>
+                              <span className="truncate">{c.name}</span>
+                            </div>
+                            {isSelected && <Check className="h-3.5 w-3.5 shrink-0" />}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>

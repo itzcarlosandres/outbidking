@@ -1,10 +1,22 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { formatCurrency, getFaviconUrl } from "@/lib/utils"
-import { CategoryData, INITIAL_CATEGORIES } from "@/lib/categories"
-import { ArrowRight, Crown, Globe, Medal, Sparkles, TrendingUp, Trophy, Users, Zap } from "lucide-react"
+import { CategoryData, INITIAL_CATEGORIES, getCategoryIcon } from "@/lib/categories"
+import {
+  ArrowRight,
+  Check,
+  ChevronDown,
+  Crown,
+  Globe,
+  Medal,
+  Sparkles,
+  TrendingUp,
+  Trophy,
+  Users,
+  Zap,
+} from "lucide-react"
 
 interface HeroClaimProps {
   topPrice?: number
@@ -24,10 +36,28 @@ export function HeroClaim({
   const [faviconError, setFaviconError] = useState(false)
   const [categories, setCategories] = useState<CategoryData[]>([])
   const [categoryInput, setCategoryInput] = useState<string>("AI Agents & Infrastructure")
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false)
+  const categoryRef = useRef<HTMLDivElement>(null)
+
   const targetTopOneBid = topPrice > 0 ? topPrice + 5 : 5
   const [bidAmount, setBidAmount] = useState<number>(targetTopOneBid)
   const [userHasModifiedBid, setUserHasModifiedBid] = useState(false)
   const [onlineLive, setOnlineLive] = useState(onlineCount)
+
+  // Cerrar dropdown al hacer clic afuera
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (categoryRef.current && !categoryRef.current.contains(event.target as Node)) {
+        setIsCategoryOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  // Icono oficial de la categoría actualmente seleccionada
+  const selectedCategoryObj = categories.find((c) => c.name === categoryInput)
+  const SelectedCategoryIcon = selectedCategoryObj ? getCategoryIcon(selectedCategoryObj.icon) : Sparkles
 
   // Sincronizar con el precio del #1 en tiempo real si el usuario no ha editado manualmente
   useEffect(() => {
@@ -166,19 +196,68 @@ export function HeroClaim({
             />
           </div>
 
-          <div className="md:w-52 shrink-0">
-            <select
-              value={categoryInput}
-              onChange={(e) => setCategoryInput(e.target.value)}
-              aria-label="Select a category for your product"
-              className="w-full h-12 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] px-3 text-xs sm:text-sm font-medium text-[var(--foreground)] focus:outline-hidden focus:border-[#FF4A1C] focus:ring-2 focus:ring-[#FF4A1C]/20 transition-all cursor-pointer truncate"
+          {/* Selector personalizado de categorías con iconos oficiales */}
+          <div ref={categoryRef} className="relative md:w-60 shrink-0 text-left">
+            <button
+              type="button"
+              onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+              className="w-full h-12 rounded-xl bg-[var(--input-bg)] border border-[var(--input-border)] px-3 text-xs sm:text-sm font-semibold text-[var(--foreground)] focus:outline-hidden focus:border-[#FF4A1C] focus:ring-2 focus:ring-[#FF4A1C]/20 transition-all flex items-center justify-between gap-2 cursor-pointer hover:border-[#FF4A1C]/50"
+              aria-expanded={isCategoryOpen}
+              aria-label="Select Category"
             >
-              {categories.map((c) => (
-                <option key={c.id} value={c.name}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#FF4A1C]/10 text-[#FF4A1C] shrink-0">
+                  <SelectedCategoryIcon className="h-3.5 w-3.5" />
+                </div>
+                <span className="truncate">{categoryInput}</span>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-[var(--muted)] shrink-0 transition-transform duration-200 ${
+                  isCategoryOpen ? "rotate-180 text-[#FF4A1C]" : ""
+                }`}
+              />
+            </button>
+
+            {/* Menú desplegable con iconos oficiales */}
+            {isCategoryOpen && (
+              <div className="absolute top-full left-0 right-0 mt-2 z-50 rounded-2xl border border-[var(--card-border)] bg-[var(--card)] p-1.5 shadow-xl max-h-72 overflow-y-auto backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
+                <div className="space-y-0.5">
+                  {categories.map((c) => {
+                    const IconComp = getCategoryIcon(c.icon)
+                    const isSelected = c.name === categoryInput
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => {
+                          setCategoryInput(c.name)
+                          setIsCategoryOpen(false)
+                        }}
+                        className={`w-full flex items-center justify-between gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer text-left ${
+                          isSelected
+                            ? "bg-[#FF4A1C] text-white shadow-xs"
+                            : "text-[var(--foreground)] hover:bg-[var(--muted-bg)]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div
+                            className={`flex h-6 w-6 items-center justify-center rounded-lg shrink-0 ${
+                              isSelected
+                                ? "bg-white/20 text-white"
+                                : "bg-[#FF4A1C]/10 text-[#FF4A1C]"
+                            }`}
+                          >
+                            <IconComp className="h-3.5 w-3.5" />
+                          </div>
+                          <span className="truncate">{c.name}</span>
+                        </div>
+                        {isSelected && <Check className="h-3.5 w-3.5 shrink-0" />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Stepper de Puja [-] $ 22 [+] */}
