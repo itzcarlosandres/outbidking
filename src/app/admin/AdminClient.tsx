@@ -578,7 +578,19 @@ export function AdminClient({
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 6)
 
-  const ADMIN_SECTIONS = [
+  interface AdminTabItem {
+    id: string
+    label: string
+    count: number | null
+    icon: any
+  }
+
+  interface AdminSection {
+    title: string
+    items: AdminTabItem[]
+  }
+
+  const ADMIN_SECTIONS: AdminSection[] = [
     {
       title: "Visión General",
       items: [
@@ -607,10 +619,10 @@ export function AdminClient({
         { id: "seo", label: "SEO & Metadatos", count: null, icon: Globe },
       ],
     },
-  ] as const
+  ]
 
-  const ALL_ADMIN_TABS = ADMIN_SECTIONS.flatMap((s) => s.items)
-  const currentTabObj = ALL_ADMIN_TABS.find((t) => t.id === activeTab) || ALL_ADMIN_TABS[0]
+  const ALL_ADMIN_TABS: AdminTabItem[] = ADMIN_SECTIONS.flatMap((s) => s.items)
+  const currentTabObj: AdminTabItem = ALL_ADMIN_TABS.find((t) => t.id === activeTab) || ALL_ADMIN_TABS[0]
   const CurrentIcon = currentTabObj.icon
 
   return (
