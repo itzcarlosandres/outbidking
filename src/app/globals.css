@@ -1,26 +1,133 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Modo Claro Especificado */
+  --background: #FBF5EE;
+  --foreground: #241C15;
+  --muted: #A2917F;
+  --muted-bg: #F4EAE0;
+  --card: #FFFFFF;
+  --card-foreground: #241C15;
+  --card-border: #EFE3D5;
+  --accent: #FF4A1C;
+  --accent-hover: #E63D10;
+  --accent-light: #FFEEE4;
+  --top3-bg: #FFEEE4;
+  --top3-border: #FFD2BC;
+  --top3-badge: #FF4A1C;
+  --success: #18A558;
+  --input-bg: #FFFFFF;
+  --input-border: #E5D7C7;
+  --ring: #FF4A1C;
+  --shadow-soft: 0 10px 30px rgba(60, 30, 10, 0.06);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  /* Modo Oscuro Especificado */
+  --background: #100D0B;
+  --foreground: #F2EAE1;
+  --muted: #8D7D6E;
+  --muted-bg: #1A1512;
+  --card: #1A1512;
+  --card-foreground: #F2EAE1;
+  --card-border: #2B231D;
+  --accent: #FF5B2E;
+  --accent-hover: #FF7247;
+  --accent-light: #2A170F;
+  --top3-bg: #22140D;
+  --top3-border: #4A2718;
+  --top3-badge: #FF5B2E;
+  --success: #22C55E;
+  --input-bg: #1A1512;
+  --input-border: #3A2F27;
+  --ring: #FF5B2E;
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@theme {
+  --color-bg-main: var(--background);
+  --color-text-main: var(--foreground);
+  --color-text-muted: var(--muted);
+  --color-bg-muted: var(--muted-bg);
+  --color-card-main: var(--card);
+  --color-card-border: var(--card-border);
+  --color-brand-accent: var(--accent);
+  --color-brand-accent-hover: var(--accent-hover);
+  --color-brand-accent-light: var(--accent-light);
+  --color-top3-bg: var(--top3-bg);
+  --color-top3-border: var(--top3-border);
+  --color-top3-badge: var(--top3-badge);
+  --color-brand-success: var(--success);
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-poppins), 'Poppins', 'Poppins Fallback', system-ui, -apple-system, sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tipografía Poppins para Encabezados H1, H2, H3, H4, H5, H6 */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-poppins), 'Poppins', 'Poppins Fallback', sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+}
+
+p, span, div, a, button, input, textarea, select {
+  font-family: var(--font-poppins), 'Poppins', 'Poppins Fallback', sans-serif;
+}
+
+/* Tabular nums para precios consistentes */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sombras suaves */
+.shadow-soft {
+  box-shadow: var(--shadow-soft);
+}
+
+/* Letras de títulos con espaciado ajustado */
+.title-tight {
+  letter-spacing: -0.035em;
+}
+
+/* Efecto Flash Naranja para nuevas pujas en vivo */
+@keyframes orangeFlash {
+  0% {
+    background-color: rgba(255, 74, 28, 0.35);
+    transform: scale(1.01);
+  }
+  100% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+}
+
+.animate-bid-flash {
+  animation: orangeFlash 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Scrollbar estilizado */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
 }

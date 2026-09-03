@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  image     String?
+  handle    String?   @unique
+  role      Role      @default(USER)
+  sites     Site[]
+  bids      Bid[]
+  payments  Payment[]
+  createdAt DateTime  @default(now())
+}
+
+model Site {
+  id          String     @id @default(cuid())
+  ownerId     String
+  owner       User       @relation(fields: [ownerId], references: [id])
+  name        String
+  slug        String     @unique
+  url         String
+  description String     @db.Text
+  category    String     @default("AI Agents & Infrastructure")
+  status      SiteStatus @default(ACTIVE)
+  clicks      Int        @default(0)
+  expiresAt   DateTime
+  bids        Bid[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([category])
+  @@index([status])
+}
+
+model CategoryItem {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  icon        String   @default("Sparkles")
+  description String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model Bid {
+  id          String   @id @default(cuid())
+  siteId      String
+  site        Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  amount      Decimal  @db.Decimal(10, 2)
+  isWinning   Boolean  @default(false)
+  auctionDate DateTime @default(now()) // para ranking "Hoy"
+  createdAt   DateTime @default(now())
+
+  @@index([siteId, createdAt])
+  @@index([auctionDate])
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  referenceId   String        @unique @default(cuid())
+  amount        Decimal       @db.Decimal(10, 2)
+  type          PaymentType
+  status        PaymentStatus @default(COMPLETED)
+  paymentMethod String        @default("MANUAL_TEST")
+  siteId        String?
+  bidId         String?
+  createdAt     DateTime      @default(now())
+}
+
+model AuctionConfig {
+  id             String  @id @default(cuid())
+  minIncrement   Decimal @db.Decimal(10, 2) @default(5)
+  maxBidsPerHour Int     @default(10)
+}
+
+model SiteConfig {
+  id                String   @id @default(cuid())
+  siteName          String   @default("puja.lol")
+  logoText          String   @default("puja")
+  logoAccent        String   @default(".lol")
+  tagline           String   @default("Plataforma de ranking con pujas en tiempo real")
+  metaTitle         String   @default("puja.lol — Ranking de Proyectos y Pujas en Tiempo Real")
+  metaDescription   String   @default("Publica tu web, app, canal o SaaS y compite en pujas en vivo por el #1 del ranking. Máxima visibilidad y clicks.")
+  metaKeywords      String   @default("ranking, pujas en vivo, directorio saas, startups, outbid, puja.lol, proyectos")
+  ogImage           String?
+  faviconUrl        String?
+  googleAnalyticsId String?
+  heroTitle         String   @default("Reclama el #1 por")
+  heroSubtitle      String   @default("Publica tu web, canal o producto y compite en pujas en vivo por el top del ranking. El Top 3 recibe máxima exposición.")
+  bannerNotice      String?  @default("¡Bienvenido a puja.lol! Compite en tiempo real para posicionar tu producto.")
+  minIncrement      Decimal  @db.Decimal(10, 2) @default(5)
+  maxBidsPerHour    Int      @default(10)
+  basicPrice        Decimal  @db.Decimal(10, 2) @default(5)
+  basicDays         Int      @default(7)
+  proPrice          Decimal  @db.Decimal(10, 2) @default(12)
+  proDays           Int      @default(30)
+  elitePrice        Decimal  @db.Decimal(10, 2) @default(25)
+  eliteDays         Int      @default(90)
+
+  // Pasarelas & Métodos de Pago
+  nowpaymentsApiKey    String?  @default("")
+  nowpaymentsIpnSecret String?  @default("")
+  nowpaymentsSandbox   Boolean  @default(false)
+  enableCryptoPayments Boolean  @default(true)
+  enableTestPayments   Boolean  @default(true)
+  enableManualPayments Boolean  @default(false)
+  walletUsdtTrc20      String?  @default("")
+  walletUsdtErc20      String?  @default("")
+  walletBtc            String?  @default("")
+  walletSol            String?  @default("")
+  manualPaymentNotes   String?  @db.Text
+
+  updatedAt         DateTime @updatedAt
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum SiteStatus {
+  ACTIVE
+  EXPIRED
+  SUSPENDED
+}
+
+enum PaymentType {
+  LISTING
+  BID
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
