@@ -25,18 +25,13 @@ export default function HomePage() {
   const [loading, setLoading] = useState<boolean>(true)
   
   const [stats, setStats] = useState({
-    totalRevenue: 241105,
-    totalSites: 20,
-    totalBids: 85,
+    totalRevenue: 0,
+    totalSites: 0,
+    totalBids: 0,
     onlineEstimate: 87,
   })
 
-  const [activities, setActivities] = useState<ActivityItem[]>([
-    { id: "1", userHandle: "cryptonico", siteName: "ChatNode AI", siteSlug: "chatnode-ai", rank: 1, amount: 17005, timeAgo: "2m ago" },
-    { id: "2", userHandle: "marina_seo", siteName: "KiteSEO Analytics", siteSlug: "kiteseo-analytics", rank: 2, amount: 14250, timeAgo: "8m ago" },
-    { id: "3", userHandle: "luna_codes", siteName: "PromptLayer Studio", siteSlug: "promptlayer-studio", rank: 3, amount: 11800, timeAgo: "15m ago" },
-    { id: "4", userHandle: "mateorivas", siteName: "CryptoSniper Pro", siteSlug: "cryptosniper-pro", rank: 4, amount: 9600, timeAgo: "24m ago" },
-  ])
+  const [activities, setActivities] = useState<ActivityItem[]>([])
 
   const [lastBidSiteId, setLastBidSiteId] = useState<string | null>(null)
 
@@ -121,8 +116,8 @@ export default function HomePage() {
 
   usePusherBids(handleRealtimeBid)
 
-  // Obtener el precio del puesto #1
-  const topOnePrice = sites.length > 0 && sites[0].position === 1 ? sites[0].winningBid : 14250
+  // Obtener el precio del puesto #1 (0 si la web es nueva y no tiene pujas)
+  const topOnePrice = sites.length > 0 && sites[0].position === 1 ? (sites[0].winningBid || 0) : 0
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--background)] transition-colors">

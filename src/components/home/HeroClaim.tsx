@@ -14,7 +14,7 @@ interface HeroClaimProps {
 }
 
 export function HeroClaim({
-  topPrice = 14250,
+  topPrice = 0,
   rankingSites = [],
   onlineCount = 87,
   totalVisitors = 1483786,
@@ -24,15 +24,15 @@ export function HeroClaim({
   const [faviconError, setFaviconError] = useState(false)
   const [categories, setCategories] = useState<CategoryData[]>([])
   const [categoryInput, setCategoryInput] = useState<string>("AI Agents & Infrastructure")
-  const targetTopOneBid = topPrice > 0 ? topPrice + 5 : 25
+  const targetTopOneBid = topPrice > 0 ? topPrice + 5 : 5
   const [bidAmount, setBidAmount] = useState<number>(targetTopOneBid)
   const [userHasModifiedBid, setUserHasModifiedBid] = useState(false)
   const [onlineLive, setOnlineLive] = useState(onlineCount)
 
   // Sincronizar con el precio del #1 en tiempo real si el usuario no ha editado manualmente
   useEffect(() => {
-    if (topPrice > 0 && !userHasModifiedBid) {
-      setBidAmount(topPrice + 5)
+    if (!userHasModifiedBid) {
+      setBidAmount(topPrice > 0 ? topPrice + 5 : 5)
     }
   }, [topPrice, userHasModifiedBid])
 

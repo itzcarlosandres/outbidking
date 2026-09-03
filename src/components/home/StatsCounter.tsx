@@ -11,9 +11,9 @@ interface StatsCounterProps {
 }
 
 export function StatsCounter({
-  totalRevenue = 241105,
-  totalSites = 20,
-  totalBids = 85,
+  totalRevenue = 0,
+  totalSites = 0,
+  totalBids = 0,
 }: StatsCounterProps) {
   const [animatedRevenue, setAnimatedRevenue] = useState(0)
   const [hasAnimated, setHasAnimated] = useState(false)

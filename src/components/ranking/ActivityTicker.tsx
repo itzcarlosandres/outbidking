@@ -25,7 +25,7 @@ const DEFAULT_ACTIVITIES: ActivityItem[] = [
   { id: "5", userHandle: "elenagrowth", siteName: "ViralMetrics Growth", siteSlug: "viralmetrics-growth", rank: 5, amount: 8200, timeAgo: "35m ago" },
 ]
 
-export function ActivityTicker({ items = DEFAULT_ACTIVITIES }: ActivityTickerProps) {
+export function ActivityTicker({ items = [] }: ActivityTickerProps) {
   return (
     <div className="w-full border-y border-[var(--card-border)] bg-[var(--muted-bg)]/40 py-2.5 overflow-hidden">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -39,19 +39,26 @@ export function ActivityTicker({ items = DEFAULT_ACTIVITIES }: ActivityTickerPro
           </span>
 
           <div className="flex items-center gap-2.5 min-w-max">
-            {items.map((act) => (
-              <div
-                key={act.id}
-                className="inline-flex items-center gap-2 rounded-full border border-[var(--card-border)] bg-[var(--card)] px-3 py-1 text-xs text-[var(--foreground)] shadow-2xs hover:border-[#FF4A1C]/40 transition-colors"
-              >
-                <span className="font-bold text-[#FF4A1C]">@{act.userHandle}</span>
-                <span className="text-[var(--muted)]">bid on #{act.rank}</span>
-                <span className="font-extrabold text-[var(--foreground)] tabular-nums">
-                  {formatCurrency(act.amount)}
-                </span>
-                <span className="text-[10px] text-[var(--muted)]">({act.timeAgo})</span>
+            {items.length === 0 ? (
+              <div className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--muted)]">
+                <span className="text-[#FF4A1C] font-bold">🚀 Submissions are open!</span>
+                <span>Be the first project to claim the #1 spot on the leaderboard.</span>
               </div>
-            ))}
+            ) : (
+              items.map((act) => (
+                <div
+                  key={act.id}
+                  className="inline-flex items-center gap-2 rounded-full border border-[var(--card-border)] bg-[var(--card)] px-3 py-1 text-xs text-[var(--foreground)] shadow-2xs hover:border-[#FF4A1C]/40 transition-colors"
+                >
+                  <span className="font-bold text-[#FF4A1C]">@{act.userHandle}</span>
+                  <span className="text-[var(--muted)]">bid on #{act.rank}</span>
+                  <span className="font-extrabold text-[var(--foreground)] tabular-nums">
+                    {formatCurrency(act.amount)}
+                  </span>
+                  <span className="text-[10px] text-[var(--muted)]">({act.timeAgo})</span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
