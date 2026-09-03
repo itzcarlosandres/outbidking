@@ -44,7 +44,7 @@
     "tsx": "^4.23.13",
     "typescript": "^5"
   },
-  "packageManager": "pnpm@11.13.0",
+  "packageManager": "pnpm@9.15.4",
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   }
