@@ -361,60 +361,15 @@ async function main() {
         description: s.description,
         category: s.category,
         status: SiteStatus.ACTIVE,
-        clicks: s.clicks,
+        clicks: s.clicks || 0,
         expiresAt: expiresAt,
         ownerId: owner.id,
         createdAt: createdAt,
       },
     })
-
-    // Pago de publicación
-    await prisma.payment.create({
-      data: {
-        userId: owner.id,
-        amount: 25.0,
-        type: PaymentType.LISTING,
-        status: PaymentStatus.COMPLETED,
-        paymentMethod: 'MANUAL_TEST',
-        siteId: site.id,
-        createdAt: createdAt,
-      },
-    })
-
-    // Pujas históricas
-    for (let bIdx = 0; bIdx < s.historyBids.length; bIdx++) {
-      const bidAmount = s.historyBids[bIdx]
-      const isWinning = bIdx === s.historyBids.length - 1
-      const bidder = createdUsers[(s.ownerIdx + bIdx + 1) % createdUsers.length]
-      const bidDate = new Date(createdAt.getTime() + (bIdx + 1) * 3 * 24 * 60 * 60 * 1000)
-
-      const bid = await prisma.bid.create({
-        data: {
-          siteId: site.id,
-          userId: bidder.id,
-          amount: bidAmount,
-          isWinning: isWinning,
-          auctionDate: isWinning && i < 5 ? now : bidDate,
-          createdAt: bidDate,
-        },
-      })
-
-      await prisma.payment.create({
-        data: {
-          userId: bidder.id,
-          amount: bidAmount,
-          type: PaymentType.BID,
-          status: PaymentStatus.COMPLETED,
-          paymentMethod: 'MANUAL_TEST',
-          siteId: site.id,
-          bidId: bid.id,
-          createdAt: bidDate,
-        },
-      })
-    }
   }
 
-  console.log('✅ Seed completado con éxito: 24 categorías creadas y 20 sitios asociados.')
+  console.log('✅ Seed completado con éxito: Categorías y proyectos listos en estado limpio ($0 recaudación).')
 }
 
 main()

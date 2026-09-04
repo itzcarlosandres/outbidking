@@ -392,11 +392,22 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Registro de pago no encontrado" }, { status: 404 })
       }
 
+      // Si el pago tenía una puja asociada, eliminarla para que la recaudación y el ranking bajen a 0 si no hay más pujas
+      if (payment.bidId) {
+        try {
+          await prisma.bid.delete({
+            where: { id: payment.bidId },
+          })
+        } catch (err) {
+          console.warn("No se pudo eliminar la puja vinculada:", err)
+        }
+      }
+
       await prisma.payment.delete({
         where: { id: paymentId },
       })
 
-      return NextResponse.json({ success: true, message: "Registro de pago eliminado exitosamente" })
+      return NextResponse.json({ success: true, message: "Registro de pago y puja eliminados exitosamente" })
     }
 
     // 12.2 Limpiar Múltiples Pagos (Fallidos, Pendientes o Todos)
@@ -410,10 +421,25 @@ export async function POST(request: NextRequest) {
         where: whereClause,
       })
 
+      // Si se vacía todo el historial, limpiar también todas las pujas para que la web arranque 100% limpia en $0
+      if (filter === "ALL") {
+        await prisma.bid.deleteMany({})
+      }
+
       return NextResponse.json({
         success: true,
         count: result.count,
-        message: `Se eliminaron ${result.count} registros de pagos correctamente`,
+        message: `Se eliminaron ${result.count} registros de pagos correctamente (recaudación actualizada)`,
+      })
+    }
+
+    // 12.3 Reiniciar Todo a $0 (Plataforma Limpia)
+    if (action === "reset_platform_stats") {
+      await prisma.payment.deleteMany({})
+      await prisma.bid.deleteMany({})
+      return NextResponse.json({
+        success: true,
+        message: "Se reiniciaron todos los pagos y pujas a $0. La plataforma está lista para recibir nuevos clientes.",
       })
     }
 

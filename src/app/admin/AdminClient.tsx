@@ -531,6 +531,7 @@ export function AdminClient({
       if (res.ok) {
         if (filter === "ALL") {
           setPaymentList([])
+          setSites((prev) => prev.map((s) => ({ ...s, winningBid: 0 })))
         } else if (filter === "FAILED") {
           setPaymentList((prev) => prev.filter((p) => p.status !== "FAILED"))
         } else if (filter === "PENDING") {
@@ -539,6 +540,34 @@ export function AdminClient({
         showNotification(data.message || "Historial de pagos actualizado.")
       } else {
         showNotification(data.error || "Error al limpiar registros.")
+      }
+    } catch (e) {
+      showNotification("Error de conexión.")
+    }
+  }
+
+  // Reiniciar todas las pujas y pagos a $0 (Plataforma Limpia)
+  const handleResetPlatformStats = async () => {
+    if (
+      !confirm(
+        "¿Deseas reiniciar todas las estadísticas, pujas y recaudación a $0? Esto dejará la web completamente limpia para que arranque desde cero."
+      )
+    )
+      return
+
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reset_platform_stats" }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setPaymentList([])
+        setSites((prev) => prev.map((s) => ({ ...s, winningBid: 0 })))
+        showNotification(data.message || "¡Plataforma reiniciada a $0 con éxito!")
+      } else {
+        showNotification(data.error || "Error al reiniciar estadísticas.")
       }
     } catch (e) {
       showNotification("Error de conexión.")
@@ -2288,6 +2317,18 @@ export function AdminClient({
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                       <span>Limpiar Fallidos</span>
+                    </button>
+                  )}
+
+                  {paymentList.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleResetPlatformStats}
+                      className="h-10 px-3 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                      title="Reiniciar todas las pujas y pagos a $0 (Plataforma Limpia)"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      <span>Reiniciar a $0</span>
                     </button>
                   )}
 
