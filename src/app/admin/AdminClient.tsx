@@ -487,6 +487,64 @@ export function AdminClient({
     }
   }
 
+  // Eliminar un registro de pago específico
+  const handleDeletePayment = async (paymentId: string) => {
+    if (!confirm("¿Estás seguro de que deseas eliminar permanentemente este registro de pago de la base de datos?")) return
+    setProcessingPaymentId(paymentId)
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete_payment", paymentId }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setPaymentList((prev) => prev.filter((p) => p.id !== paymentId))
+        showNotification("Registro de pago eliminado con éxito.")
+      } else {
+        showNotification(data.error || "Error al eliminar el pago.")
+      }
+    } catch (e) {
+      showNotification("Error de conexión.")
+    } finally {
+      setProcessingPaymentId(null)
+    }
+  }
+
+  // Limpiar múltiples registros de pago (Fallidos, Pendientes o Todos)
+  const handleClearPayments = async (filter: "ALL" | "FAILED" | "PENDING") => {
+    const confirmMsg =
+      filter === "ALL"
+        ? "¿Estás seguro de que deseas vaciar TODO el historial de pagos? Esta acción eliminará todos los registros y no se puede deshacer."
+        : filter === "FAILED"
+        ? "¿Deseas eliminar todos los registros de pagos fallidos o descartados?"
+        : "¿Deseas eliminar todos los registros de pagos pendientes?"
+
+    if (!confirm(confirmMsg)) return
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "clear_payments", filter }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        if (filter === "ALL") {
+          setPaymentList([])
+        } else if (filter === "FAILED") {
+          setPaymentList((prev) => prev.filter((p) => p.status !== "FAILED"))
+        } else if (filter === "PENDING") {
+          setPaymentList((prev) => prev.filter((p) => p.status !== "PENDING"))
+        }
+        showNotification(data.message || "Historial de pagos actualizado.")
+      } else {
+        showNotification(data.error || "Error al limpiar registros.")
+      }
+    } catch (e) {
+      showNotification("Error de conexión.")
+    }
+  }
+
   const handleCreateManualBid = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!manualSiteId || manualAmount <= 0) return
@@ -2216,22 +2274,48 @@ export function AdminClient({
                     <span>Control y Auditoría de Pagos</span>
                   </h2>
                   <p className="text-xs text-[var(--muted)] mt-0.5">
-                    Monitorea los pagos de NOWPayments y activa manualmente cualquier transacción si ocurre algún retraso de red.
+                    Monitorea los pagos de NOWPayments, elimina registros de prueba o fallidos, y activa manualmente cualquier transacción.
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (sites[0]) setManualSiteId(sites[0].id)
-                    setManualAmount(10)
-                    setManualBidModalOpen(true)
-                  }}
-                  className="h-10 px-4 rounded-xl bg-[#FF4A1C] text-white text-xs font-bold shadow-sm hover:bg-[#E63D10] transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
-                >
-                  <PlusCircle className="h-4 w-4" />
-                  <span>+ Registrar Pago/Puja Manual</span>
-                </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {paymentList.some((p) => p.status === "FAILED") && (
+                    <button
+                      type="button"
+                      onClick={() => handleClearPayments("FAILED")}
+                      className="h-10 px-3 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-600 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                      title="Eliminar todos los pagos fallidos o descartados"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>Limpiar Fallidos</span>
+                    </button>
+                  )}
+
+                  {paymentList.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => handleClearPayments("ALL")}
+                      className="h-10 px-3 rounded-xl border border-[var(--card-border)] bg-[var(--muted-bg)] hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-600 text-xs font-bold text-[var(--muted)] transition-all flex items-center gap-1.5 cursor-pointer"
+                      title="Vaciar todo el historial de pagos de prueba"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Vaciar Historial</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (sites[0]) setManualSiteId(sites[0].id)
+                      setManualAmount(10)
+                      setManualBidModalOpen(true)
+                    }}
+                    className="h-10 px-4 rounded-xl bg-[#FF4A1C] text-white text-xs font-bold shadow-sm hover:bg-[#E63D10] transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                    <span>+ Registrar Pago/Puja Manual</span>
+                  </button>
+                </div>
               </div>
 
               {/* Filtros de Estado & Buscador */}
@@ -2248,10 +2332,10 @@ export function AdminClient({
                           : "text-[var(--muted)] hover:text-[var(--foreground)]"
                       }`}
                     >
-                      {filterVal === "ALL" && "Todos"}
-                      {filterVal === "PENDING" && "⏳ Pendientes"}
-                      {filterVal === "COMPLETED" && "✅ Completados"}
-                      {filterVal === "FAILED" && "❌ Fallidos"}
+                      {filterVal === "ALL" && `Todos (${paymentList.length})`}
+                      {filterVal === "PENDING" && `⏳ Pendientes (${paymentList.filter(p => p.status === "PENDING").length})`}
+                      {filterVal === "COMPLETED" && `✅ Completados (${paymentList.filter(p => p.status === "COMPLETED").length})`}
+                      {filterVal === "FAILED" && `❌ Fallidos (${paymentList.filter(p => p.status === "FAILED").length})`}
                     </button>
                   ))}
                 </div>
@@ -2278,7 +2362,7 @@ export function AdminClient({
                       <th className="pb-3 font-semibold uppercase">Pasarela</th>
                       <th className="pb-3 font-semibold uppercase">Fecha</th>
                       <th className="pb-3 font-semibold uppercase">Estado</th>
-                      <th className="pb-3 font-semibold uppercase text-right">Acción Manual</th>
+                      <th className="pb-3 font-semibold uppercase text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--card-border)]">
@@ -2326,38 +2410,54 @@ export function AdminClient({
                               {p.status}
                             </span>
                           </td>
-                          <td className="py-3 text-right space-x-1.5">
-                            {p.status === "PENDING" && (
-                              <>
-                                <button
-                                  type="button"
-                                  disabled={processingPaymentId === p.id}
-                                  onClick={() => handleApprovePaymentManually(p.id)}
-                                  className="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[11px] transition-colors shadow-xs cursor-pointer disabled:opacity-50"
-                                  title="Aprobar y activar puja en el ranking inmediatamente"
-                                >
-                                  {processingPaymentId === p.id ? "Aprobando..." : "⚡ Aprobar Manual"}
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={processingPaymentId === p.id}
-                                  onClick={() => handleCancelPayment(p.id)}
-                                  className="px-2 py-1 rounded-lg border border-red-500/30 text-red-600 hover:bg-red-500/10 font-bold text-[11px] transition-colors cursor-pointer"
-                                >
-                                  Cancelar
-                                </button>
-                              </>
-                            )}
-                            {p.status === "COMPLETED" && (
-                              <span className="text-[11px] text-emerald-600 font-semibold">
-                                ✓ Activo en Ranking
-                              </span>
-                            )}
-                            {p.status === "FAILED" && (
-                              <span className="text-[11px] text-red-500 font-semibold">
-                                Descartado
-                              </span>
-                            )}
+                          <td className="py-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {p.status === "PENDING" && (
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled={processingPaymentId === p.id}
+                                    onClick={() => handleApprovePaymentManually(p.id)}
+                                    className="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[11px] transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+                                    title="Aprobar y activar puja en el ranking inmediatamente"
+                                  >
+                                    {processingPaymentId === p.id ? "..." : "⚡ Aprobar"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={processingPaymentId === p.id}
+                                    onClick={() => handleCancelPayment(p.id)}
+                                    className="px-2 py-1 rounded-lg border border-red-500/30 text-red-600 hover:bg-red-500/10 font-bold text-[11px] transition-colors cursor-pointer disabled:opacity-50"
+                                    title="Marcar como fallido"
+                                  >
+                                    Cancelar
+                                  </button>
+                                </>
+                              )}
+
+                              {p.status === "COMPLETED" && (
+                                <span className="text-[11px] text-emerald-600 font-semibold mr-1">
+                                  ✓ Activo
+                                </span>
+                              )}
+
+                              {p.status === "FAILED" && (
+                                <span className="text-[11px] text-red-500 font-semibold mr-1">
+                                  Descartado
+                                </span>
+                              )}
+
+                              {/* Botón Eliminar Registro */}
+                              <button
+                                type="button"
+                                disabled={processingPaymentId === p.id}
+                                onClick={() => handleDeletePayment(p.id)}
+                                className="p-1.5 rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors cursor-pointer inline-flex items-center justify-center disabled:opacity-50"
+                                title="Eliminar registro permanentemente"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))

@@ -381,6 +381,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: "Pago marcado como fallido" })
     }
 
+    // 12.1 Eliminar Registro de Pago
+    if (action === "delete_payment") {
+      const { paymentId } = body
+      const payment = await prisma.payment.findUnique({
+        where: { id: paymentId },
+      })
+
+      if (!payment) {
+        return NextResponse.json({ error: "Registro de pago no encontrado" }, { status: 404 })
+      }
+
+      await prisma.payment.delete({
+        where: { id: paymentId },
+      })
+
+      return NextResponse.json({ success: true, message: "Registro de pago eliminado exitosamente" })
+    }
+
+    // 12.2 Limpiar Múltiples Pagos (Fallidos, Pendientes o Todos)
+    if (action === "clear_payments") {
+      const { filter } = body // "FAILED" | "PENDING" | "ALL"
+      let whereClause: any = {}
+      if (filter === "FAILED") whereClause = { status: "FAILED" }
+      else if (filter === "PENDING") whereClause = { status: "PENDING" }
+      
+      const result = await prisma.payment.deleteMany({
+        where: whereClause,
+      })
+
+      return NextResponse.json({
+        success: true,
+        count: result.count,
+        message: `Se eliminaron ${result.count} registros de pagos correctamente`,
+      })
+    }
+
     // 13. Registrar Pago / Puja Manual desde Admin
     if (action === "create_manual_bid") {
       const { siteId, amount, notes } = body
