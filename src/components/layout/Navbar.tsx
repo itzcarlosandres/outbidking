@@ -320,6 +320,19 @@ export function Navbar({
               </div>
             )}
 
+            {/* Selector de Tema en Mobile */}
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle light/dark theme"
+              className="lg:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--card-border)] bg-[var(--card)] text-[var(--foreground)] transition-colors hover:bg-[var(--muted-bg)] cursor-pointer"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-4 w-4 text-amber-400" />
+              ) : (
+                <Moon className="h-4 w-4 text-slate-600" />
+              )}
+            </button>
+
             {/* Mobile menu toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

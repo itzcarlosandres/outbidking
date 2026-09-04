@@ -87,10 +87,13 @@ export default function RootLayout({
                 try {
                   var saved = localStorage.getItem('pujalol_theme');
                   var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  if (saved === 'dark' || (!saved && prefersDark)) {
+                  var isDark = saved === 'dark' || (!saved && prefersDark);
+                  if (isDark) {
                     document.documentElement.classList.add('dark');
+                    document.documentElement.style.colorScheme = 'dark';
                   } else {
                     document.documentElement.classList.remove('dark');
+                    document.documentElement.style.colorScheme = 'light';
                   }
                 } catch (e) {}
               })();
